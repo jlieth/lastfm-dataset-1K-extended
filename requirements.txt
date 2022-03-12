@@ -1,0 +1,6 @@
+click
+musicbrainzngs
+pyarrow
+pydantic
+python_progress_bar
+pytz
