@@ -46,8 +46,6 @@ class DatasetExtender:
         for row in islice(self.dataset.to_batches(max_chunksize=1), idx, None):
             # occasionally write results
             if idx > 0 and idx % 100 == 0:
-                print("Writing musicbrainz cache to disk...")
-                self.fetcher.write_cache()
                 print("Writing parquet file to disk...")
                 self.add_columns()
                 self.write()

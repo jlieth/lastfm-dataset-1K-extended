@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Generic, Type, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union
 
 from . import DATADIR
 from .entities import Recording, Release
@@ -10,15 +10,18 @@ T = TypeVar("T", Recording, Release)
 
 
 class Container(Generic[T]):
-    def __init__(self, item_class: Type[T]):
+    def __init__(self, item_class: Type[T], on_change: Optional[Callable] = None):
         self.items: dict[str, T] = {}
         self.item_class = item_class
+        self.on_change: Optional[Callable] = on_change
 
     def __getitem__(self, key: str) -> T:
         return self.items[key]
 
     def __setitem__(self, key: str, value: T):
         self.items[key] = value
+        if self.on_change:
+            self.on_change()
 
     def from_dict(self, data: dict[str, dict[str, Any]]):
         for key, r in data.items():
@@ -29,10 +32,13 @@ class Container(Generic[T]):
 
 
 class MBCache:
+    BACKUP_AFTER = 50
+
     def __init__(self, cachefile: Union[str, Path]):
         self.cachefile = cachefile
-        self.recordings = Container(Recording)
-        self.releases = Container(Release)
+        self.recordings = Container(Recording, on_change=self.backup)
+        self.releases = Container(Release, on_change=self.backup)
+        self.changes = 0
 
         self._read()
 
@@ -46,7 +52,9 @@ class MBCache:
         except json.JSONDecodeError:
             pass
 
-    def write(self):
+        self.changes = 0
+
+    def _write(self):
         data = {
             "recordings": self.recordings.to_dict(),
             "releases": self.releases.to_dict(),
@@ -54,8 +62,23 @@ class MBCache:
         with open(self.cachefile, "w") as f:
             f.write(json.dumps(data))
 
+    def backup(self):
+        self.changes += 1
+        if self.changes >= self.BACKUP_AFTER:
+            print("Writing musicbrainz cache to disk...")
+            self.status()
+            self._write()
+            self.changes = 0
+
+    def status(self):
+        print(
+            "Musicbrainz cache:",
+            f"{len(self.recordings.items)} recordings,",
+            f"{len(self.releases.items)} releases",
+        )
+
 
 if __name__ == "__main__":
     cachefile = DATADIR / "musicbrainz.cache"
     cache = MBCache(cachefile)
-    cache.write()
+    cache.backup()

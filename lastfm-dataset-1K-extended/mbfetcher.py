@@ -60,6 +60,3 @@ class MBFetcher:
 
             self.cache.releases[mbid] = release
             return release
-
-    def write_cache(self):
-        self.cache.write()
