@@ -25,7 +25,7 @@ class Container(Generic[T]):
 
     def from_dict(self, data: dict[str, dict[str, Any]]):
         for key, r in data.items():
-            self[key] = self.item_class(**r)
+            self.items[key] = self.item_class(**r)
 
     def to_dict(self) -> dict[str, dict[str, Any]]:
         return {mbid: r.dict() for mbid, r in self.items.items()}
