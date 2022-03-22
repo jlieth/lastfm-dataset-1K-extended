@@ -29,6 +29,8 @@ user actually listened to.**
 The following example rows show the new table schema and possible values for
 each column.
 
+Length is in milliseconds.
+
 | user_id | timestamp | artist_id | artist_name | track_id | track_name | album_id | album_name | album_artist_name | length | tracknumber |
 | - | - | - | - | - | - | - | - | - | - | - |
 | user_000001 | 2006-08-13 13:59:20+00:00 | 09a114d9-7723-4e14-b524-379697f6d2b5 | Plaid & Bob Jaroc | c4633ab1-e715-477f-8685-afa5f2058e42 | The Launching Of Big Face | b5d8192f-6924-4e2c-952b-b10b69eb2cfa | Greedy Baby | Plaid & Bob Jaroc | 254173 | 3 |
