@@ -134,6 +134,97 @@ And run:
 $ sqlite-utils insert <output database file> <table name> <input csv file> --csv
 ```
 
+## Normalizing the database
+
+For ease of use, I decided to create a normalized sqlite database.
+`sqlite-utils` can be used for that, see
+[here](https://sqlite-utils.datasette.io/en/stable/cli.html#extracting-columns-into-a-separate-table)
+for documentation.
+
+### Table layout before normalization:
+
+Table `listens`
+| user_id | timestamp | artist_id | artist_name | track_id | track_name | album_id | album_name | album_artist_name | length | tracknumber |
+| - | - | - | - | - | - | - | - | - | - | - |
+| user_000001 | 2006-08-21 15:14:58+00:00 | 7b42e4cf-650b-4fe0-bc7d-c95e31247729 | Peven Everett | f548d49d-4239-4066-b867-f88419c14e3c | I Can Give It | 9fd11527-90ac-4c2d-ae37-40e1570d5011 | GP03 | Various Artists | 235360 | 4 |
+
+
+### Table layout after normalization:
+
+#### Table `users`
+| id | name        |
+| -- | ----------- |
+| 1	 | user_000001 |
+
+```sql
+CREATE TABLE [users] (
+   [id] INTEGER PRIMARY KEY,
+   [name] TEXT
+)
+```
+
+#### Table `artists`
+| id | mbid                                 | name            |
+| -- | ------------------------------------ | --------------- |
+| 1  | 7b42e4cf-650b-4fe0-bc7d-c95e31247729 | Peven Everett   |
+| 2  |                                      | Various Artists |
+
+```sql
+CREATE TABLE [artists] (
+   [id] INTEGER PRIMARY KEY,
+   [mbid] TEXT,
+   [name] TEXT
+)
+```
+
+#### Table `albums`
+| id | mbid                                 | title | artist_id |
+| ---| ------------------------------------ | ----- | --------- |
+| 1  | 9fd11527-90ac-4c2d-ae37-40e1570d5011 | GP03  | 2         |
+
+```sql
+CREATE TABLE [albums] (
+   [id] INTEGER PRIMARY KEY,
+   [mbid] TEXT,
+   [title] TEXT,
+   [artist_id] TEXT,
+   FOREIGN KEY([artist_id]) REFERENCES [artists]([id])
+)
+```
+
+#### Table `tracks`
+| id | artist_id | mbid                                 | title         | album_id | length | tracknumber |
+| -- | --------- | ------------------------------------ | ------------- | -------- | ------ | ----------- |
+| 1  | 1         | f548d49d-4239-4066-b867-f88419c14e3c | I Can Give It | 1        | 235360 | 4           |
+
+```sql
+CREATE TABLE [tracks] (
+   [id] INTEGER PRIMARY KEY,
+   [artist_id] INTEGER,
+   [mbid] TEXT,
+   [title] TEXT,
+   [album_id] INTEGER,
+   [length] INTEGER,
+   [tracknumber] INTEGER,
+   FOREIGN KEY([artist_id]) REFERENCES [artists]([id]),
+   FOREIGN KEY([album_id]) REFERENCES [albums]([id])
+)
+```
+
+#### Table `listens`
+| user_id | timestamp | track_id |
+| - | - | - |
+| 1 | 2006-08-21 15:14:58+00:00 | 1 |
+
+```sql
+CREATE TABLE "listens" (
+   [user_id] INTEGER REFERENCES [users]([id]),
+   [timestamp] TEXT,
+   [track_id] INTEGER,
+   FOREIGN KEY([track_id]) REFERENCES [tracks]([id])
+)
+```
+
 ---
 
 ## Original README
